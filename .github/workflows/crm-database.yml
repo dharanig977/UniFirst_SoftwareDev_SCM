@@ -1,0 +1,105 @@
+# Sets up and checks the CRM database on Aiven. Run it by hand:
+#   Actions tab -> "CRM database" -> Run workflow -> choose an action.
+#
+#   check  = connect as admin and print table row counts (changes nothing)
+#   setup  = create/upgrade the crm schema, the two logins, and load sample data.
+#            Safe to run again: it never deletes or overwrites rows.
+#   logins = test that crm_app and crm_etl_reader can sign in with the right rights
+#
+# Repository secrets it needs (Settings -> Secrets and variables -> Actions):
+#   CRM_ADMIN_DATABASE_URL  Aiven "Service URI" (avnadmin), from the service Overview page
+#   CRM_DATABASE_CA         Aiven "CA certificate" (the whole -----BEGIN CERTIFICATE----- text)
+#   CRM_APP_PASSWORD        a new strong password you choose for the app login
+#   CRM_ETL_PASSWORD        a new strong password you choose for the ETL login
+name: CRM database
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "check, setup or logins"
+        type: choice
+        options: [check, setup, logins]
+        default: check
+
+concurrency:
+  group: crm-database
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  db:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: crm-app
+    env:
+      ADMIN_URL: ${{ secrets.CRM_ADMIN_DATABASE_URL }}
+      CRM_DATABASE_CA: ${{ secrets.CRM_DATABASE_CA }}
+      APP_PASSWORD: ${{ secrets.CRM_APP_PASSWORD }}
+      ETL_PASSWORD: ${{ secrets.CRM_ETL_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the secrets are set
+        run: |
+          missing=""
+          [ -n "$ADMIN_URL" ] || missing="$missing CRM_ADMIN_DATABASE_URL"
+          [ -n "$CRM_DATABASE_CA" ] || missing="$missing CRM_DATABASE_CA"
+          if [ "${{ inputs.action }}" != "check" ]; then
+            [ -n "$APP_PASSWORD" ] || missing="$missing CRM_APP_PASSWORD"
+            [ -n "$ETL_PASSWORD" ] || missing="$missing CRM_ETL_PASSWORD"
+          fi
+          if [ -n "$missing" ]; then echo "::error::Missing repository secret(s):$missing"; exit 1; fi
+      - name: Trust Aiven's certificate (full TLS verification)
+        run: |
+          printf '%s\n' "$CRM_DATABASE_CA" > "$RUNNER_TEMP/aiven-ca.pem"
+          echo "PGSSLMODE=verify-full" >> "$GITHUB_ENV"
+          echo "PGSSLROOTCERT=$RUNNER_TEMP/aiven-ca.pem" >> "$GITHUB_ENV"
+          # libpq reads sslmode from the URL first, so drop it there.
+          echo "ADMIN_URL=$(printf '%s' "$ADMIN_URL" | sed -E 's/[?&]sslmode=[^&]*//')" >> "$GITHUB_ENV"
+
+      - name: Check (read only)
+        if: inputs.action == 'check'
+        run: |
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -c "select version(), current_user, current_database()"
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -c "
+            select c.relname as table_name, c.reltuples::bigint as approx_rows
+              from pg_class c join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'crm' and c.relkind = 'r' order by 1" \
+            || echo "The crm schema does not exist yet. Run the workflow again with action = setup."
+
+      - name: Setup (schema, logins, sample data)
+        if: inputs.action == 'setup'
+        run: |
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -q -f db/001_crm_schema.sql
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -q -v app_password="$APP_PASSWORD" -v etl_password="$ETL_PASSWORD" -f db/002_crm_roles.sql
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -q -f db/seed/003_crm_seed.sql > /dev/null
+          psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -c "
+            select 'accounts' t, count(*) from crm.accounts union all
+            select 'contacts', count(*) from crm.contacts union all
+            select 'opportunities', count(*) from crm.opportunities union all
+            select 'demand_forecasts', count(*) from crm.demand_forecasts union all
+            select 'sales_budgets', count(*) from crm.sales_budgets union all
+            select 'orders (ERP links)', count(*) from crm.orders"
+
+      - name: Test the two logins
+        if: inputs.action == 'setup' || inputs.action == 'logins'
+        run: |
+          # Same host and database as the admin URL, different user and password.
+          as_user() {
+            python3 - "$ADMIN_URL" "$1" "$2" <<'PY'
+          import sys, urllib.parse as u
+          p = u.urlsplit(sys.argv[1])
+          host = p.hostname + (f":{p.port}" if p.port else "")
+          print(u.urlunsplit(p._replace(netloc=f"{sys.argv[2]}:{u.quote(sys.argv[3], safe='')}@{host}")))
+          PY
+          }
+          APP_URL=$(as_user crm_app "$APP_PASSWORD")
+          ETL_URL=$(as_user crm_etl_reader "$ETL_PASSWORD")
+          echo "crm_app can read:";        psql "$APP_URL" -Atc "select count(*) || ' accounts' from crm.accounts"
+          echo "crm_app cannot delete:";   ! psql "$APP_URL" -c "delete from crm.activities where false" 2>/dev/null && echo ok
+          echo "crm_etl_reader can read:"; psql "$ETL_URL" -Atc "select count(*) || ' budget rows' from crm.sales_budgets"
+          echo "crm_etl_reader is read-only:"; ! psql "$ETL_URL" -c "update crm.accounts set phone = phone where false" 2>/dev/null && echo ok
