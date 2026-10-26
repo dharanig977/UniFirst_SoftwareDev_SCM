@@ -25,3 +25,12 @@ export function erpRole(session: Session | null): string | null {
   const role = session?.user?.app_metadata?.erp_role
   return typeof role === 'string' ? role : null
 }
+
+/** A friendly name for the welcome screen: the user's display name if set, else their email name. */
+export function displayName(session: Session | null): string {
+  const meta = session?.user?.user_metadata ?? {}
+  const name = meta.full_name ?? meta.display_name ?? meta.name
+  if (typeof name === 'string' && name.trim()) return name.trim()
+  const local = session?.user?.email?.split('@')[0] ?? 'there'
+  return local.charAt(0).toUpperCase() + local.slice(1)
+}

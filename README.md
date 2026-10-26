@@ -1,9 +1,18 @@
 # Supply Chain ERP
 
-A small ERP-style operations app on top of an existing Supabase (PostgreSQL) database of synthetic supply-chain data.
+An ERP-style supply chain operations app on top of an existing Supabase (PostgreSQL) database of synthetic supply-chain data. The layout follows enterprise ERP clients: a navigation pane, an action pane, workspaces, FastTabs and dense grids.
 
-- **Operations:** search purchase orders, create a PO from existing suppliers and products, and record goods receipts. Over-receipts are flagged and blocked.
-- **Inventory & Analytics:** inventory by SKU and warehouse from `reporting.vw_inventory_reconciliation`, an independent recheck of each row, open and overdue POs, and a discrepancy investigation panel with recommendations.
+After sign-in you land on **Welcome, <name>** with five modules. Each module opens a workspace, and each workspace tile opens a task page:
+
+| Module | Task pages |
+|---|---|
+| Purchase | New purchase order (confirm or save as draft), All purchase orders (confirm drafts), Product receipt (over-receipts blocked) |
+| Sales | New sales order (shows available stock), All sales orders |
+| Inventory | On-hand inventory from `reporting.vw_inventory_reconciliation`, Discrepancy investigation with recommendations |
+| Master Data Management | Products, Suppliers, Warehouses, New product, New supplier |
+| Reports | Purchase, sales and inventory reports with **Draft / Open / Pending / Closed** filters, vendor/warehouse/date filters and CSV export |
+
+Order types are calculated from real quantities: Draft = saved, not confirmed; Open = confirmed, nothing received or shipped; Pending = partly received or shipped; Closed = fully received or shipped, or closed.
 
 Stack: React + TypeScript + Vite, `@supabase/supabase-js`, Supabase Auth, Row Level Security, and Postgres functions.
 
@@ -11,12 +20,15 @@ Stack: React + TypeScript + Vite, `@supabase/supabase-js`, Supabase Auth, Row Le
 
 ```
 src/lib/supabaseClient.ts   the only place the Supabase client is created (refuses secret keys)
-src/data/*.ts               one data-access file per area: products, suppliers,
-                            purchaseOrders, goodsReceipts, reporting, auth
+src/data/*.ts               one data-access file per area: products, suppliers, purchaseOrders,
+                            goodsReceipts, salesOrders, masterData, reporting, auth
+src/data/ErpData.tsx        loads all tables once and shares them with every page
 src/lib/logic.ts            pure business rules: PO status, validation, reconciliation, investigation
-src/screens/                Operations, Inventory & Analytics, Login
+src/lib/stage.ts            Draft / Open / Pending / Closed classification
+src/shell/                  app frame, navigation map (modules.ts), page building blocks
+src/pages/                  home, module workspaces, and the task pages for each module
 supabase/migrations/        SQL applied to the database (additive only)
-supabase/dryrun/            local Postgres dry run of the migration (32 checks)
+supabase/dryrun/            local Postgres dry runs of the migrations (001: 32 checks, 002: 24 checks)
 docs/                       schema findings and the write-testing plan
 ```
 

@@ -21,6 +21,9 @@ export function toDataError(error: PostgrestError | null, action: string): DataE
   if (code === 'PGRST106' || /schema must be one of/i.test(error.message)) {
     return new DataError(`${action}: the "api" schema is not exposed. Add it under Supabase Dashboard > Project Settings > Data API > Exposed schemas.`, code)
   }
+  if (code === 'PGRST202') {
+    return new DataError(`${action}: this action needs database update 002 (new module functions), which hasn't been applied yet.`, code)
+  }
   if (code === '23505') return new DataError(`${action}: that ID already exists (duplicate primary key).`, code)
   if (code === '23503') return new DataError(`${action}: a referenced supplier, product or purchase order does not exist.`, code)
   return new DataError(`${action} failed: ${error.message}`, code)

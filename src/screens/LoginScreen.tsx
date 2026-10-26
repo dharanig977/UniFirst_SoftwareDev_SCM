@@ -29,8 +29,12 @@ export function LoginScreen() {
   return (
     <div className="center">
       <form className="card login" onSubmit={submit} noValidate>
-        <h1>Supply Chain ERP</h1>
-        <p className="muted">Sign in with the account your administrator created in Supabase Auth.</p>
+        <div className="login-brand">
+          <strong>UniFirst SCM</strong>
+          <span>Supply Chain Operations</span>
+        </div>
+        <h1>Sign in</h1>
+        <p className="muted">Use the account your administrator created for you.</p>
         <Field label="Email">
           <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
         </Field>
