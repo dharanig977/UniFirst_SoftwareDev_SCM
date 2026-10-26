@@ -5,7 +5,7 @@ create function auth.jwt() returns jsonb language sql stable as $$
   select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
 grant usage on schema auth to anon, authenticated;
 create schema raw; create schema reporting;
-create table raw.products (sku text primary key, product_name text not null, category text, unit_cost numeric);
+create table raw.products (sku text primary key, product_name text not null, category text, unit_cost numeric(12,2));
 create table raw.suppliers (supplier_id text primary key, supplier_name text not null, standard_lead_days integer);
 create table raw.purchase_orders (po_id text primary key, supplier_id text references raw.suppliers(supplier_id), sku text references raw.products(sku), warehouse_id text, order_qty integer, order_date date, expected_date date, status text);
 create table raw.goods_receipts (receipt_id text primary key, po_id text references raw.purchase_orders(po_id), sku text references raw.products(sku), warehouse_id text, received_qty integer, receipt_date date);

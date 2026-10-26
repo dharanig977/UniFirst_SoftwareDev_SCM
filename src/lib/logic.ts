@@ -54,7 +54,9 @@ export function summarizePurchaseOrders(pos: PurchaseOrder[], receipts: GoodsRec
       receivedQty === 0 ? 'Open' : remainingQty > 0 ? 'Partially Received' : remainingQty === 0 ? 'Received' : 'Over-received'
     const stored = (po.status ?? '').trim().toLowerCase()
     const cancelledOrClosed = stored === 'cancelled' || stored === 'closed'
-    const isOpen = !cancelledOrClosed && remainingQty > 0
+    // A Draft hasn't been sent to the supplier, so it can't be open or overdue.
+    const isDraft = stored === 'draft'
+    const isOpen = !cancelledOrClosed && !isDraft && remainingQty > 0
     const daysOverdue = isOpen && po.expected_date ? Math.max(0, daysBetween(po.expected_date, today)) : 0
     return {
       po,
@@ -64,7 +66,7 @@ export function summarizePurchaseOrders(pos: PurchaseOrder[], receipts: GoodsRec
       isOpen,
       isOverdue: daysOverdue > 0,
       daysOverdue,
-      statusMismatch: !cancelledOrClosed && stored !== derivedStatus.toLowerCase(),
+      statusMismatch: !cancelledOrClosed && !isDraft && stored !== derivedStatus.toLowerCase(),
     }
   })
 }
