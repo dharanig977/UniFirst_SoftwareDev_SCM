@@ -16,6 +16,11 @@ Order types are calculated from real quantities: Draft = saved, not confirmed; O
 
 Stack: React + TypeScript + Vite, `@supabase/supabase-js`, Supabase Auth, Row Level Security, and Postgres functions.
 
+## Companion apps in this repository
+
+- **`crm-app/`**: UniFirst CRM (customers, pipeline, demand forecasts, sales budget, ERP order links). Its own Vercel project with Root Directory `crm-app`. See [crm-app/README.md](crm-app/README.md).
+- **`analytics-warehouse/`**: the ETL and star schema behind the Power BI reports.
+
 ## How it is put together
 
 ```
