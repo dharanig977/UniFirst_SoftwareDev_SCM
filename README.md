@@ -20,6 +20,7 @@ Stack: React + TypeScript + Vite, `@supabase/supabase-js`, Supabase Auth, Row Le
 
 - **`crm-app/`**: UniFirst CRM (customers, pipeline, demand forecasts, sales budget, ERP order links). Its own Vercel project with Root Directory `crm-app`. See [crm-app/README.md](crm-app/README.md).
 - **`analytics-warehouse/`**: the ETL and star schema behind the Power BI reports.
+- **`etl-console/`**: UniFirst ETL Console, a read-only web console showing both sources (SCM, CRM), their tables, the warehouse layers, load history and data quality. Its own Vercel project with Root Directory `etl-console`. See [etl-console/README.md](etl-console/README.md).
 
 ## How it is put together
 
