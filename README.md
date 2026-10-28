@@ -1,5 +1,7 @@
 # Supply Chain ERP
 
+> **Independent portfolio demo built on synthetic data, not affiliated with UniFirst.**
+
 An ERP-style supply chain operations app on top of an existing Supabase (PostgreSQL) database of synthetic supply-chain data. The layout follows enterprise ERP clients: a navigation pane, an action pane, workspaces, FastTabs and dense grids.
 
 After sign-in you land on **Welcome, <name>** with five modules. Each module opens a workspace, and each workspace tile opens a task page:
