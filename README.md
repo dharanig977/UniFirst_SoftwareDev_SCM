@@ -16,11 +16,17 @@ Order types are calculated from real quantities: Draft = saved, not confirmed; O
 
 Stack: React + TypeScript + Vite, `@supabase/supabase-js`, Supabase Auth, Row Level Security, and Postgres functions.
 
-## Companion apps in this repository
+## Project links
 
-- **CRM**: UniFirst CRM (customers, pipeline, demand forecasts, sales budget, ERP order links) now lives in its own repository, [UniFirst_CRM](https://github.com/dharanig977/UniFirst_CRM), with its own Vercel project.
-- **`analytics-warehouse/`**: the ETL and star schema behind the Power BI reports.
-- **`etl-console/`**: UniFirst ETL Console, a read-only web console showing both sources (SCM, CRM), their tables, the warehouse layers, load history and data quality. Its own Vercel project with Root Directory `etl-console`. See [etl-console/README.md](etl-console/README.md).
+This project has three repositories: two source systems and the cloud data warehouse that reads them. The database consoles need a sign-in; no passwords or connection strings are kept in any repository.
+
+| Part | Repository | Database (console link) |
+|---|---|---|
+| ERP (SCM), source 1 | [UniFirst_SoftwareDev_SCM](https://github.com/dharanig977/UniFirst_SoftwareDev_SCM) | Supabase PostgreSQL: [project dashboard](https://supabase.com/dashboard/project/epvnsalihzmnrkqcxkoc) (schemas `raw`, `reporting`, `api`) |
+| CRM, source 2 | [UniFirst_CRM](https://github.com/dharanig977/UniFirst_CRM) | Aiven PostgreSQL: [Aiven console](https://console.aiven.io/) (database `defaultdb`, schema `crm`) |
+| Cloud data warehouse | [UniFirst_DataWarehouse](https://github.com/dharanig977/UniFirst_DataWarehouse) | Neon PostgreSQL: [project console](https://console.neon.tech/app/projects/tiny-band-79271165) (database `neondb`; report schemas `rpt_inventory`, `rpt_demand`) |
+
+**Live ETL console:** https://uni-first-data-warehouse.vercel.app (sign in with an ERP account).
 
 ## How it is put together
 
