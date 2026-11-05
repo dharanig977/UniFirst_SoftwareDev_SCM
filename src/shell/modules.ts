@@ -39,6 +39,19 @@ export const MODULES: Module[] = [
     ],
   },
   {
+    id: 'agents',
+    title: 'AI Agents',
+    description: 'Sales order agent, approver agent, shipping with bin stock and e-mail alerts',
+    icon: 'agent',
+    tasks: [
+      { path: 'agents/sales-agent', title: 'Sales order agent', description: 'Raise orders in plain English', icon: 'agent', write: true },
+      { path: 'agents/approvals', title: 'Approvals', description: 'Approver agent decisions and orders waiting for you', icon: 'check' },
+      { path: 'agents/ship', title: 'Ship orders', description: 'Automatic stock check, ship from bins', icon: 'receive', write: true },
+      { path: 'agents/bins', title: 'Bins', description: 'Bin stock and movements', icon: 'warehouse' },
+      { path: 'agents/outbox', title: 'E-mail outbox', description: 'Shortage alerts and weekly sales report', icon: 'mail' },
+    ],
+  },
+  {
     id: 'inventory',
     title: 'Inventory',
     description: 'On-hand stock, reconciliation and discrepancies',

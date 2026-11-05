@@ -19,6 +19,8 @@ const PATHS: Record<string, string> = {
   supplier: 'M3 7h11v9H3z M14 10h4l3 3v3h-7z M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z M17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
   product: 'M4 7l8-4 8 4-8 4z M4 7v10l8 4 8-4V7 M12 11v10',
   investigate: 'M10 17a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M21 21l-6-6 M10 7v4 M10 13h.01',
+  agent: 'M12 3v3 M8 6h8a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a3 3 0 0 1 3-3z M9 12h.01 M15 12h.01 M9 16h6',
+  mail: 'M3 6h18v12H3z M3 7l9 6 9-6',
   chevron: 'M9 6l6 6-6 6',
   signout: 'M15 4h4v16h-4 M10 8l-4 4 4 4 M6 12h10',
 }

@@ -5,6 +5,7 @@ import { displayName, erpRole, getSession, onAuthChange } from './data/auth'
 import { ErpDataProvider, useErpData } from './data/ErpData'
 import { useRoute } from './lib/router'
 import { configProblem } from './lib/supabaseClient'
+import { ApprovalsPage, BinsPage, NotificationsPage, SalesAgentPage, ShipOrdersPage } from './pages/agents'
 import { HomePage } from './pages/HomePage'
 import { InventoryReportPage, PurchaseReportPage, SalesReportPage } from './pages/reports'
 import { InvestigationPage, OnHandPage } from './pages/inventory'
@@ -97,6 +98,16 @@ function Router({ route, name, canWrite }: { route: string; name: string; canWri
       return <SalesOrdersPage {...p} />
     case 'sales/new':
       return <NewSalesOrderPage {...p} />
+    case 'agents/sales-agent':
+      return <SalesAgentPage {...p} />
+    case 'agents/approvals':
+      return <ApprovalsPage {...p} />
+    case 'agents/ship':
+      return <ShipOrdersPage {...p} />
+    case 'agents/bins':
+      return <BinsPage route={route} />
+    case 'agents/outbox':
+      return <NotificationsPage {...p} />
     case 'inventory/on-hand':
       return <OnHandPage route={route} />
     case 'inventory/investigate':
