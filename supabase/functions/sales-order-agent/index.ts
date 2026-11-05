@@ -1,10 +1,13 @@
 // Sales order agent: turns a plain-English request into a Draft sales order.
-// Claude only picks the customer, SKU, warehouse and quantity using the tools below;
+// Free by default: a built-in parser (parser.ts) matches the request against the real
+// customer and product lists. If an ANTHROPIC_API_KEY secret is ever added, Claude is used
+// instead (tool use below). Either way the agent only picks the customer, SKU, warehouse and qty;
 // every write goes through api.agent_create_sales_order with the caller's own sign-in,
 // so the database role checks (operator only) still apply. The new order is then
 // handed to the approver agent.
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { parseRequest } from './parser.ts'
 
 const MODEL = 'claude-opus-5-5'
 const cors = {
@@ -79,7 +82,6 @@ Deno.serve(async (req) => {
   if (role !== 'operator') return json({ error: 'Only ERP operators can use the sales order agent.' }, 403)
 
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) return json({ error: 'ANTHROPIC_API_KEY is not set in Supabase Edge Function secrets yet.' }, 503)
 
   const { message } = await req.json().catch(() => ({ message: '' }))
   if (typeof message !== 'string' || !message.trim()) return json({ error: 'Send { "message": "..." }' }, 400)
@@ -136,6 +138,42 @@ Deno.serve(async (req) => {
     }
   }
 
+  // ---------------- Free mode: built-in parser, no paid API ----------------
+  if (!apiKey) {
+    try {
+      const [{ data: customers, error: e1 }, { data: products, error: e2 }] = await Promise.all([
+        db.from('customers').select('account_id, account_name, home_warehouse_id'),
+        db.from('products').select('sku, product_name').neq('sku', 'TST-9001'),
+      ])
+      if (e1 || e2) throw e1 ?? e2
+      const parsed = parseRequest(requestText, customers ?? [], products ?? [])
+      steps.push({ tool: 'parse_request', input: { customer: parsed.customer?.account_id, warehouse: parsed.warehouse_id, lines: parsed.lines }, ok: true })
+      if (parsed.questions.length || !parsed.customer) {
+        return json({ reply: parsed.questions.join(' ') || 'Which customer is this order for?', created, steps, mode: 'free' })
+      }
+      const sentences: string[] = []
+      for (const line of parsed.lines) {
+        const result = (await runTool('create_sales_order', {
+          account_id: parsed.customer.account_id,
+          sku: line.sku,
+          warehouse_id: parsed.warehouse_id ?? '',
+          qty: line.qty,
+        })) as { order: { sales_order_id: string; amount: number; stock_status: string; available_at_check: number }; approval: { approval_status?: string; decision_reason?: string; error?: string } }
+        steps.push({ tool: 'create_sales_order', input: line, ok: true })
+        const o = result.order
+        sentences.push(
+          `Created ${o.sales_order_id}: ${line.qty} x ${line.product_name} for ${parsed.customer.account_name}, $${Number(o.amount).toFixed(2)}. ` +
+            `Stock ${o.stock_status} (${o.available_at_check} available). ` +
+            (result.approval.approval_status ? `Approver: ${result.approval.approval_status}. ${result.approval.decision_reason ?? ''}` : `Approver error: ${result.approval.error}`),
+        )
+      }
+      return json({ reply: sentences.join('\n'), created, steps, mode: 'free' })
+    } catch (e) {
+      return json({ error: (e as { message?: string }).message ?? String(e), created, steps, mode: 'free' }, 400)
+    }
+  }
+
+  // ---------------- Claude mode (only if ANTHROPIC_API_KEY is set) ----------------
   const client = new Anthropic({ apiKey })
   const messages: Anthropic.Beta.BetaMessageParam[] = [{ role: 'user', content: requestText }]
   let reply = ''
