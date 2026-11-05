@@ -87,7 +87,7 @@ export function SalesAgentPage({ route, canWrite }: { route: string; canWrite: b
     <Page
       route={route}
       title="Sales order agent"
-      subtitle="Type the request in plain English. The agent looks up the customer, product, price and stock, creates a Draft order and hands it to the approver agent."
+      subtitle="Type the request in plain English, e.g. customer, quantity and product. The agent matches it to real customers and products, checks price and stock, creates a Draft order and hands it to the approver agent. If anything is unclear it asks back."
       actions={[
         { label: 'Send', icon: 'check', onClick: send, disabled: !canWrite || submit.saving || !message.trim(), primary: true },
         { label: 'Approvals', icon: 'list', to: 'agents/approvals' },

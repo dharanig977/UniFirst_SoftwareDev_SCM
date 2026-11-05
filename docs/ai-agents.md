@@ -1,11 +1,11 @@
 # AI agents for sales orders
 
-Two Claude-powered agents plus database rules that check stock, deduct bins and send e-mail.
+Two agents plus database rules that check stock, deduct bins and send e-mail. **Everything runs free**: the sales order agent uses a built-in parser by default. If an `ANTHROPIC_API_KEY` secret is ever added (paid, prepaid credits), it switches to Claude automatically and the approver adds a Claude-written explanation.
 
 | Piece | Where it runs | What it does |
 |---|---|---|
-| **Sales order agent** | Edge Function `sales-order-agent` | Reads a plain-English request ("Derby City Foods wants 10 Chef Coats"), looks up the customer, SKU, price and stock with tools, then creates a Draft order through `api.agent_create_sales_order`. |
-| **Approver agent** | Edge Function `approver-agent` | Runs `api.auto_review_sales_order`. Fixed rules decide: stock available **and** amount ≤ $1,000 → Approved (order goes Open); otherwise → Needs Approval for a person. Claude only writes a short explanation; it cannot change the decision. |
+| **Sales order agent** | Edge Function `sales-order-agent` (+ `parser.ts`) | Reads a plain-English request ("Derby City Foods wants 10 Chef Coats and 5 hard hats from Kentucky"). Free mode: matches customer, products (name or SKU), quantities and warehouse (code, state or city) against the live lists, and asks back when something is missing or ambiguous. Then creates Draft orders through `api.agent_create_sales_order`. |
+| **Approver agent** | Edge Function `approver-agent` | Runs `api.auto_review_sales_order`. Fixed rules decide: stock available **and** amount ≤ $1,000 → Approved (order goes Open); otherwise → Needs Approval for a person, with the reason. (With a Claude key it also adds a short written explanation; it can never change the decision.) |
 | **Automatic stock check** | `api.check_stock`, view `api.sales_order_stock` | Available = qty in bins − open qty of other confirmed orders. Shown as Available / Partial / Short on every open order. |
 | **Ship + shortage alert** | `api.ship_sales_order` | Deducts from the fullest bin first, writes `ops.stock_movements`, updates shipped qty/status. If units could not be picked, or total left is below the reorder point, it queues an e-mail to the inventory team with every bin's qty. |
 | **Weekly sales report** | pg_cron `erp-weekly-sales-report` (Mon 13:00 UTC = 08:00 Eastern in winter) | Counts last week's orders and lists the ones above $1,000 with amounts, for the sales head. |
@@ -19,8 +19,8 @@ Bins: seeded from the latest reconciliation row per SKU and warehouse, split 60/
 
 ## One-time setup (Supabase dashboard)
 
-1. **Claude API key**: create one at console.anthropic.com → API keys. In Supabase → Edge Functions → Secrets, add `ANTHROPIC_API_KEY`.
-2. **Resend key**: sign up at resend.com (free), create an API key, add it as `RESEND_API_KEY` in the same place. Without a verified domain, Resend only delivers to the e-mail you signed up with, sent from `onboarding@resend.dev`.
+1. *(Optional, paid)* **Claude API key**: only if you want Claude instead of the free parser. Create one at console.anthropic.com, add it in Supabase → Edge Functions → Secrets as `ANTHROPIC_API_KEY`.
+2. **Resend key** (free): sign up at resend.com (free), create an API key, add it as `RESEND_API_KEY` in the same place. Without a verified domain, Resend only delivers to the e-mail you signed up with, sent from `onboarding@resend.dev`.
 3. **Recipients**: in the SQL editor run (use the address you signed up to Resend with until a domain is verified):
 
    ```sql
@@ -33,4 +33,4 @@ Bins: seeded from the latest reconciliation row per SKU and warehouse, split 60/
 
 AI Agents → **Sales order agent** → type a request. Then **Approvals** (approve the big ones), **Ship orders** (ship and watch bins drop), **E-mail outbox** (preview, "Queue weekly report now", "Send queued now").
 
-The model is `claude-opus-5-5` with server-side refusal fallbacks enabled (`fallbacks: "default"`).
+In Claude mode the model is `claude-opus-5-5` with server-side refusal fallbacks enabled (`fallbacks: "default"`).
