@@ -322,3 +322,13 @@ ul.plain { margin: 0; padding-left: 18px; }
   .filter-bar input[type='search'] { min-width: 0; width: 100%; }
   .fasttab-body { padding-left: 16px; }
 }
+
+/* AI Agents module */
+.agent-input { width: 100%; box-sizing: border-box; font: inherit; padding: 8px 10px; border: 1px solid var(--border-strong); border-radius: 2px; background: var(--surface); color: inherit; resize: vertical; }
+.chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip-row .chip { font-size: 0.82rem; padding: 3px 10px; border-radius: 12px; }
+.agent-reply { white-space: pre-wrap; margin: 0 0 10px; }
+.facts .wide { grid-column: 1 / -1; }
+.form-footer .grow { flex: 1; min-width: 200px; }
+.grid.compact th, .grid.compact td { padding: 4px 10px; }
+.mail-preview { width: 100%; min-height: 320px; border: 1px solid var(--border); background: #fff; }

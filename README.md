@@ -4,12 +4,13 @@
 
 An ERP-style supply chain operations app on top of an existing Supabase (PostgreSQL) database of synthetic supply-chain data. The layout follows enterprise ERP clients: a navigation pane, an action pane, workspaces, FastTabs and dense grids.
 
-After sign-in you land on **Welcome, <name>** with five modules. Each module opens a workspace, and each workspace tile opens a task page:
+After sign-in you land on **Welcome, <name>** with six modules. Each module opens a workspace, and each workspace tile opens a task page:
 
 | Module | Task pages |
 |---|---|
 | Purchase | New purchase order (confirm or save as draft), All purchase orders (confirm drafts), Product receipt (over-receipts blocked) |
 | Sales | New sales order (shows available stock), All sales orders |
+| AI Agents | Sales order agent (plain-English orders, Claude), Approvals (approver agent), Ship orders (bin deduction + shortage alerts), Bins, E-mail outbox (weekly sales head report). See [docs/ai-agents.md](docs/ai-agents.md) |
 | Inventory | On-hand inventory from `reporting.vw_inventory_reconciliation`, Discrepancy investigation with recommendations |
 | Master Data Management | Products, Suppliers, Warehouses, New product, New supplier |
 | Reports | Purchase, sales and inventory reports with **Draft / Open / Pending / Closed** filters, vendor/warehouse/date filters and CSV export |
